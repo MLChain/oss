@@ -1,0 +1,54 @@
+.mlchainTooltip {
+  position: relative;
+}
+
+/*== common styles for both parts of tool tip ==*/
+.mlchainTooltip::before,
+.mlchainTooltip::after {
+  left: 50%;
+  opacity: 0;
+  position: absolute;
+  transform: translate(-50%, 0);
+  transition: opacity .3s, visibility .3s;
+  visibility: hidden;
+  z-index: 99999;
+}
+
+.mlchainTooltip:hover::before,
+.mlchainTooltip:focus::before,
+.mlchainTooltip:hover::after,
+.mlchainTooltip:focus::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+/*== pointer tip ==*/
+.mlchainTooltip::before {
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 10px solid #3E474F;
+  bottom: 100%;
+  content: "";
+  height: 0;
+  width: 0;
+}
+
+/*== speech bubble ==*/
+.mlchainTooltip::after {
+  background: #3E474F;
+  border-radius: 3px;
+  bottom: 100%;
+  color: #EDEFF0;
+  content: attr(data-tooltip);
+  margin-bottom: 10px;
+  padding: 10px 20px;
+  width: auto;
+}
+
+@media (max-width: 760px) {
+  .mlchainTooltip::after {
+    font-size: .75em;
+    margin-left: -5em;
+    width: 10em;
+  }
+}

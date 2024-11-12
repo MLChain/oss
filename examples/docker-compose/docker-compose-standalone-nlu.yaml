@@ -1,0 +1,81 @@
+version: '3'
+
+services:
+  mlchain:
+    build:
+      context: ./mlchain
+      dockerfile: Dockerfile
+    image: mlchain/server
+    container_name: mlchain-server
+    ports:
+      - 3000:3000
+    environment:
+      - DATABASE_URL=postgres://postgres:secretpw@postgres:5435/mlchain_db
+      - EXTERNAL_URL=http://localhost:3000
+    depends_on:
+      - mlchain_nlu
+      - postgres
+    volumes:
+      - ./mlchain/data:/mlchain/data
+
+  mlchain_lang:
+    build:
+      context: ./mlchain
+      dockerfile: Dockerfile
+    image: mlchain/server
+    container_name: mlchain-lang
+    command: ./bp lang --langDir /mlchain/lang --port 3100
+    expose:
+      - 3100
+    volumes:
+      - ./mlchain/language:/mlchain/lang
+
+  mlchain_duckling:
+    build:
+      context: ./mlchain
+      dockerfile: Dockerfile
+    image: mlchain-duckling
+    container_name: mlchain-duckling
+    command: ./duckling -p 8000
+    expose:
+      - 8000
+  # Each instance of mlchain must have its own NLU server
+  # connections between multiple mlchain instances and NLU server cannot be load balanced
+  mlchain_nlu:
+    build:
+      context: ./mlchain
+      dockerfile: Dockerfile
+    image: mlchain/server
+    container_name: mlchain-nlu
+    command: ./bp nlu --port 3200 --dbURL postgres://postgres:secretpw@postgres:5435/mlchain_db --languageURL http://mlchain_lang:3100 --ducklingURL http://mlchain_duckling:8000
+    expose:
+      - 3200
+    depends_on:
+      - mlchain_duckling
+      - mlchain_lang
+
+  postgres:
+    image: postgres:11.2-alpine
+    expose:
+      - 5435
+    container_name: postgres
+    environment:
+      PGPORT: 5435
+      POSTGRES_DB: mlchain_db
+      POSTGRES_PASSWORD: secretpw
+      POSTGRES_USER: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  nginx:
+    image: nginx:1.21
+    ports:
+      - 80:80
+    command: nginx -g 'daemon off';
+    depends_on:
+      - mlchain
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+
+volumes:
+  pgdata:
